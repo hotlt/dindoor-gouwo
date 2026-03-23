@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐶 狗窝 - 轻量级本地 SQLite 知识库</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;600;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a192f;
+            --bg-secondary: #112240;
+            --text-primary: #ccd6f6;
+            --text-secondary: #8892b0;
+            --accent-gold: #ffd700;
+            --accent-orange: #ff6b35;
+            --border-color: #233554;
+            --card-bg: rgba(17, 34, 64, 0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0a192f 0%, #112240 50%, #0a192f 100%);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 背景纹理 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 107, 53, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 80px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .logo {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Features Grid */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 80px;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.8s ease-out backwards;
+        }
+
+        .feature-card:nth-child(1) { animation-delay: 0.1s; }
+        .feature-card:nth-child(2) { animation-delay: 0.2s; }
+        .feature-card:nth-child(3) { animation-delay: 0.3s; }
+        .feature-card:nth-child(4) { animation-delay: 0.4s; }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-gold);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+
+        /* Highlight feature */
+        .highlight {
+            color: var(--accent-gold);
+            font-weight: 600;
+        }
+
+        /* Installation */
+        .section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 50px;
+            margin-bottom: 60px;
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.8s ease-out 0.5s backwards;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .code-block {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            color: var(--accent-gold);
+            font-size: 0.9rem;
+        }
+
+        .code-block code {
+            color: var(--accent-gold);
+        }
+
+        /* Usage Example */
+        .usage-grid {
+            display: grid;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .command {
+            background: var(--bg-primary);
+            border-left: 4px solid var(--accent-gold);
+            padding: 15px 20px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Monaco', monospace;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+
+        /* Links */
+        .links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .link-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .link-card:hover {
+            border-color: var(--accent-gold);
+            transform: translateX(5px);
+        }
+
+        .link-icon {
+            font-size: 30px;
+        }
+
+        .link-info h4 {
+            margin-bottom: 5px;
+            font-size: 1rem;
+        }
+
+        .link-info p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            animation: fadeIn 1s ease-out 0.8s backwards;
+        }
+
+        .author {
+            color: var(--accent-gold);
+            font-weight: 600;
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            .logo {
+                font-size: 60px;
+            }
+            .container {
+                padding: 40px 15px;
+            }
+            .section {
+                padding: 30px 20px;
+            }
+            .section-title {
+                font-size: 1.5rem;
+            }
+            .features {
+                grid-template-columns: 1fr;
+            }
+            .links {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Floating paw prints decoration */
+        .paw {
+            position: fixed;
+            font-size: 100px;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 0;
+            animation: float 10s ease-in-out infinite;
+        }
+
+        .paw-1 {
+            top: 10%;
+            left: 5%;
+            animation-delay: 0s;
+        }
+
+        .paw-2 {
+            bottom: 20%;
+            right: 8%;
+            animation-delay: 5s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="paw paw-1">🐾</div>
+    <div class="paw paw-2">🐾</div>
+
+    <div class="container">
+        <header>
+            <div class="logo">🐶</div>
+            <h1>狗窝</h1>
+            <p class="subtitle">轻量级本地 SQLite 知识库 for OpenClaw AI 代理<br>干净简洁，快速高效，随用随存</p>
+        </header>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🧹</div>
+                <h3>自动数据清洗</h3>
+                <p>存入时自动<span class="highlight">去除多余空行空格</span>，压缩数据体积，保持内容整洁干净，减小数据库尺寸。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔑</div>
+                <h3>自动关键词提取</h3>
+                <p>基于词频统计自动提取关键词，<span class="highlight">过滤中文停用词</span>，不用手动一个个输入，省心省力。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>FTS 全文检索</h3>
+                <p>使用 SQLite 内置<span class="highlight">全文搜索引擎</span>，搜索快速准确，数据多了也不卡。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📁</div>
+                <h3>分类标签管理</h3>
+                <p>支持给内容添加<span class="highlight">分类标签</span>，可以按分类筛选查看，整理有条有理。</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🚀 一键安装</h2>
+            <p>在 OpenClaw 中直接安装使用：</p>
+            <div class="code-block">
+                <code>claw skill install tianya-claw/dindoor-gouwo</code>
+            </div>
+            <p>或者通过 GitHub 安装：</p>
+            <div class="code-block">
+                <code>skillhub install dindoor/dindoor-gouwo</code>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">💡 使用示例</h2>
+            <div class="usage-grid">
+                <div class="command">
+# 添加内容，自动提取关键词<br>
+python3 skills/dindoor-gouwo/scripts/gouwo.py add "麟德智造3匹机组仅售3300元" "麟德智造,价格,机组" "产品"
+                </div>
+                <div class="command">
+# 搜索内容<br>
+python3 skills/dindoor-gouwo/scripts/gouwo.py search "价格"
+                </div>
+                <div class="command">
+# 查看完整内容<br>
+python3 skills/dindoor-gouwo/scripts/gouwo.py get 1
+                </div>
+                <div class="command">
+# 列出"产品"分类<br>
+python3 skills/dindoor-gouwo/scripts/gouwo.py list 产品
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">✨ 特性概览</h2>
+            <div class="features" style="margin-bottom: 0;">
+                <div class="feature-card" style="animation: none;">
+                    <div class="feature-icon">🔄</div>
+                    <h3>内容更新</h3>
+                    <p>支持<span class="highlight">更新已有条目</span>，不用删除重录，修改方便。</p>
+                </div>
+                <div class="feature-card" style="animation: none;">
+                    <div class="feature-icon">📖</div>
+                    <h3>查看全文</h3>
+                    <p>搜索结果支持<span class="highlight">直接查看完整内容</span>，不用翻找。</p>
+                </div>
+                <div class="feature-card" style="animation: none;">
+                    <div class="feature-icon">📊</div>
+                    <h3>统计信息</h3>
+                    <p>支持查看<span class="highlight">总条目、总字符、分类列表</span>，一目了然。</p>
+                </div>
+                <div class="feature-card" style="animation: none;">
+                    <div class="feature-icon">✅</div>
+                    <h3>零依赖</h3>
+                    <p><span class="highlight">只需要 Python 标准库</span>，SQLite 自带，不用额外安装。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🔗 源码仓库</h2>
+            <p>欢迎 Star ⭐ 体验，问题反馈交流！</p>
+            <div class="links">
+                <a href="https://github.com/hotlt/dindoor-gouwo" target="_blank" class="link-card">
+                    <span class="link-icon">🐙</span>
+                    <div class="link-info">
+                        <h4>GitHub</h4>
+                        <p>hotlt/dindoor-gouwo</p>
+                    </div>
+                </a>
+                <a href="https://gitee.com/dindoor/dindoor-gouwo" target="_blank" class="link-card">
+                    <span class="link-icon">🇨🇳</span>
+                    <div class="link-info">
+                        <h4>Gitee</h4>
+                        <p>dindoor/dindoor-gouwo（国内镜像）</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <footer>
+            <p>Created with ❤️ by <span class="author">dindoor</span> for OpenClaw • 2026</p>
+        </footer>
+    </div>
+
+    <script>
+        // Simple scroll reveal animation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add hover sound effect placeholder (optional)
+            const cards = document.querySelectorAll('.feature-card, .link-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.borderColor = 'rgb(255, 215, 0)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.borderColor = 'var(--border-color)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
