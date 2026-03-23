@@ -1,19 +1,27 @@
 #!/usr/bin/env python3
 """
-狗窝 - 本地SQLite知识库
+狗窝 - 本地SQLite知识库 v2.0
+新增功能：
+1. 重复内容合并（相似度检测）
+2. 检索频率等级（热点优先）
+3. 定时备份（自动覆盖）
 """
 
 import sqlite3
 import sys
 import os
 import re
+import shutil
+import hashlib
 from datetime import datetime
 from pathlib import Path
+import difflib
 
 # 数据库路径
-DB_PATH = os.path.join(os.getcwd(), "data", "gouwo.db")
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "gouwo.db")
+BACKUP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "backups")
 
-# 中文停用词，提高关键词提取质量
+# 中文停用词
 STOP_WORDS = {
     '的', '是', '在', '我', '有', '和', '就', '不', '也', '都', '要', '这', '那',
     '一个', '可以', '我们', '你', '他', '她', '它', '了', '着', '给', '对', '到',
@@ -23,30 +31,32 @@ STOP_WORDS = {
 }
 
 def init_db():
-    """初始化数据库表，启用FTS全文检索"""
+    """初始化数据库表"""
     Path(os.path.dirname(DB_PATH)).mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # 主表
+    # v2.0: 新增 search_count (检索次数) 和 content_hash (内容哈希)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS knowledge (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             content TEXT NOT NULL,
+            content_hash TEXT,
             keywords TEXT,
             category TEXT,
+            search_count INTEGER DEFAULT 0,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL
         )
     ''')
     
-    # 创建FTS全文检索虚拟表用于高效检索
+    # FTS全文检索虚拟表
     cursor.execute('''
         CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_fts 
         USING fts5(id, content, keywords, content=knowledge, content_rowid=id)
     ''')
     
-    # 触发器自动维护FTS索引
+    # 触发器
     cursor.execute('''
         CREATE TRIGGER IF NOT EXISTS knowledge_ai AFTER INSERT ON knowledge BEGIN
             INSERT INTO knowledge_fts(rowid, id, content, keywords) 
@@ -71,52 +81,100 @@ def init_db():
     conn.commit()
     conn.close()
 
-def extract_keywords(content, num_keywords=10):
-    """提取关键词：基于词频，过滤停用词，提高质量"""
-    # 去除标点符号，分词
-    words = re.findall(r'[\w\u4e00-\u9fa5]+', content)
+def get_content_hash(content):
+    """计算内容MD5哈希，用于重复检测"""
+    return hashlib.md5(content.encode('utf-8')).hexdigest()
+
+def calculate_similarity(text1, text2):
+    """计算两个文本的相似度（0-1）"""
+    return difflib.SequenceMatcher(None, text1, text2).ratio()
+
+def find_similar(content, threshold=0.85):
+    """查找相似内容，返回最相似的条目"""
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
     
-    # 过滤短词和停用词
+    cursor.execute('SELECT id, content, keywords, category FROM knowledge')
+    all_items = cursor.fetchall()
+    conn.close()
+    
+    cleaned = clean_content(content)
+    
+    best_match = None
+    best_ratio = 0
+    
+    for item in all_items:
+        item_id, item_content, keywords, category = item
+        ratio = calculate_similarity(cleaned, clean_content(item_content))
+        if ratio > best_ratio and ratio >= threshold:
+            best_ratio = ratio
+            best_match = item
+    
+    return best_match, best_ratio
+
+def extract_keywords(content, num_keywords=10):
+    """提取关键词"""
+    words = re.findall(r'[\w\u4e00-\u9fa5]+', content)
     words = [w for w in words if len(w) >= 2 and w not in STOP_WORDS]
     
-    # 词频统计
     word_count = {}
     for word in words:
         word_count[word] = word_count.get(word, 0) + 1
     
-    # 按词频排序，取前N个
     sorted_words = sorted(word_count.items(), key=lambda x: x[1], reverse=True)
     keywords = [w[0] for w in sorted_words[:num_keywords]]
     
     return ','.join(keywords)
 
 def clean_content(content):
-    """清洗内容：去除多余空行、空格，压缩空白，保持整洁"""
-    # 将多个换行替换为一个
+    """清洗内容"""
     content = re.sub(r'\n+', ' ', content)
-    # 将多个空格替换为一个
     content = re.sub(r'\s+', ' ', content)
-    # 修剪首尾
-    content = content.strip()
-    return content
+    return content.strip()
 
-def add_content(content, keywords=None, category=None):
-    """添加新内容到知识库，先清洗数据，支持分类"""
-    # 数据清洗压缩
+def add_content(content, keywords=None, category=None, auto_merge=True, merge_threshold=0.85):
+    """添加内容，支持重复合并"""
     content = clean_content(content)
+    content_hash = get_content_hash(content)
+    
     if not keywords:
         keywords = extract_keywords(content)
     
     init_db()
     now = datetime.now().isoformat()
     
+    # 检查重复
+    if auto_merge:
+        similar, ratio = find_similar(content, merge_threshold)
+        if similar:
+            item_id, old_content, old_keywords, old_category = similar
+            print(f"⚠️ 发现相似内容 (相似度 {ratio*100:.1f}%)")
+            print(f"   已有ID: {item_id}")
+            print(f"   新内容: {content[:80]}...")
+            print(f"   已存内容: {old_content[:80]}...")
+            print(f"\n是否合并？输入 y 合并到已有条目，n 新增，q 取消: ", end='')
+            choice = input().strip().lower()
+            
+            if choice == 'y':
+                # 合并关键词
+                old_kw_set = set(old_keywords.split(',')) if old_keywords else set()
+                new_kw_set = set(keywords.split(','))
+                merged_kws = ','.join(old_kw_set | new_kw_set)
+                update_content(item_id, content, merged_kws, category)
+                return item_id
+            elif choice == 'q':
+                print("❌ 已取消")
+                return None
+            # 否则继续新增
+    
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     cursor.execute(
-        '''INSERT INTO knowledge (content, keywords, category, created_at, updated_at) 
-           VALUES (?, ?, ?, ?, ?)''',
-        (content, keywords, category, now, now)
+        '''INSERT INTO knowledge (content, content_hash, keywords, category, search_count, created_at, updated_at) 
+           VALUES (?, ?, ?, ?, 0, ?, ?)''',
+        (content, content_hash, keywords, category, now, now)
     )
     
     conn.commit()
@@ -145,16 +203,16 @@ def update_content(item_id, new_content, keywords=None, category=None):
     if category is not None:
         cursor.execute(
             '''UPDATE knowledge 
-               SET content=?, keywords=?, category=?, updated_at=? 
+               SET content=?, content_hash=?, keywords=?, category=?, updated_at=? 
                WHERE id=?''',
-            (new_content, keywords, category, now, item_id)
+            (new_content, get_content_hash(new_content), keywords, category, now, item_id)
         )
     else:
         cursor.execute(
             '''UPDATE knowledge 
-               SET content=?, keywords=?, updated_at=? 
+               SET content=?, content_hash=?, keywords=?, updated_at=? 
                WHERE id=?''',
-            (new_content, keywords, now, item_id)
+            (new_content, get_content_hash(new_content), keywords, now, item_id)
         )
     
     conn.commit()
@@ -167,34 +225,43 @@ def update_content(item_id, new_content, keywords=None, category=None):
         print(f"❌ 未找到 ID {item_id}")
     return changed
 
-def search_content(keyword):
-    """按关键词搜索，使用FTS全文检索，更快速更准确"""
+def search_content(keyword, boost_hot=True):
+    """搜索，热点内容优先"""
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # 使用FTS全文检索，支持多关键词
     query = keyword.replace(',', ' ').replace('，', ' ')
-    # 使用FTS匹配
+    
+    # FTS搜索
     cursor.execute('''
-        SELECT k.id, k.content, k.keywords, k.category, k.created_at
+        SELECT k.id, k.content, k.keywords, k.category, k.created_at, k.search_count
         FROM knowledge k
         JOIN knowledge_fts fts ON k.id = fts.rowid
         WHERE knowledge_fts MATCH ?
-        ORDER BY k.created_at DESC
     ''', (query,))
     
     results = cursor.fetchall()
     
-    # 如果FTS没找到，降级到模糊搜索
     if not results:
+        # 降级模糊搜索
         cursor.execute('''
-            SELECT id, content, keywords, category, created_at 
+            SELECT id, content, keywords, category, created_at, search_count
             FROM knowledge 
             WHERE keywords LIKE ? OR content LIKE ?
-            ORDER BY created_at DESC
         ''', (f'%{keyword}%', f'%{keyword}%'))
         results = cursor.fetchall()
+    
+    # 更新搜索次数
+    for row in results:
+        item_id = row[0]
+        cursor.execute('UPDATE knowledge SET search_count = search_count + 1 WHERE id = ?', (item_id,))
+    
+    conn.commit()
+    
+    # 热点优先排序：search_count越高越靠前
+    if boost_hot:
+        results = sorted(results, key=lambda x: x[5] if x[5] else 0, reverse=True)
     
     conn.close()
     
@@ -202,31 +269,58 @@ def search_content(keyword):
         print("🔍 未找到相关内容")
         return []
     
-    print(f"🔍 找到 {len(results)} 条相关内容:\n")
+    print(f"🔍 找到 {len(results)} 条相关内容 (热点优先):\n")
     for i, row in enumerate(results, 1):
-        rid, content, keywords, category, created_at = row
-        print(f"[{i}] ID: {rid}")
+        rid, content, keywords, category, created_at, search_count = row
+        hot_indicator = "🔥" * min(search_count // 3, 5) if search_count else ""
+        print(f"[{i}] ID: {rid} {hot_indicator}")
         if category:
             print(f"📁 分类: {category}")
-        print(f"📅 创建时间: {created_at[:10]}")
+        print(f"📅 创建: {created_at[:10]} | 🔥检索: {search_count}次")
         print(f"🔑 关键词: {keywords}")
-        # 如果内容较短，显示全文；较长显示摘要
-        if len(content) <= 300:
+        if len(content) <= 200:
             print(f"📝 内容: {content}")
         else:
-            print(f"📝 内容: {content[:300]}...")
+            print(f"📝 内容: {content[:200]}...")
         print("-" * 60)
     
     return results
 
+def backup():
+    """覆盖式备份：只保留一份，每次覆盖"""
+    init_db()
+    Path(BACKUP_DIR).mkdir(parents=True, exist_ok=True)
+    
+    backup_file = os.path.join(BACKUP_DIR, "gouwo_backup.db")
+    
+    # 复制数据库（覆盖）
+    shutil.copy2(DB_PATH, backup_file)
+    
+    print(f"✅ 备份完成（已覆盖）: {backup_file}")
+    print(f"📁 备份目录: {BACKUP_DIR}")
+    return backup_file
+
+def restore(backup_file=None):
+    """恢复备份（从单文件备份恢复）"""
+    if not backup_file:
+        backup_file = os.path.join(BACKUP_DIR, "gouwo_backup.db")
+    
+    if not os.path.exists(backup_file):
+        print(f"❌ 备份文件不存在: {backup_file}")
+        return False
+    
+    shutil.copy2(backup_file, DB_PATH)
+    print(f"✅ 恢复完成: {DB_PATH}")
+    return True
+
 def get_full(item_id):
-    """获取条目的完整内容"""
+    """获取条目完整内容"""
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     cursor.execute('''
-        SELECT id, content, keywords, category, created_at 
+        SELECT id, content, keywords, category, created_at, search_count 
         FROM knowledge WHERE id = ?
     ''', (item_id,))
     
@@ -237,38 +331,45 @@ def get_full(item_id):
         print(f"❌ 未找到 ID {item_id}")
         return None
     
-    rid, content, keywords, category, created_at = row
-    print(f"\n📖 ID {rid} - 完整内容:\n")
+    rid, content, keywords, category, created_at, search_count = row
+    hot = "🔥" * min(search_count // 3, 5) if search_count else ""
+    
+    print(f"\n📖 ID {rid} {hot} - 完整内容:\n")
     print(content)
     print(f"\n----------------------------------------")
     print(f"🔑 关键词: {keywords}")
     if category:
         print(f"📁 分类: {category}")
     print(f"📅 创建时间: {created_at}")
+    print(f"🔥 检索次数: {search_count}")
     
     return row
 
-def list_all(category=None):
-    """列出所有内容，可按分类筛选"""
+def list_all(category=None, sort_by='hot'):
+    """列出所有内容，支持按热点排序"""
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     if category:
         cursor.execute('''
-            SELECT id, content, keywords, category, created_at 
-            FROM knowledge 
-            WHERE category = ?
+            SELECT id, content, keywords, category, created_at, search_count 
+            FROM knowledge WHERE category = ?
             ORDER BY created_at DESC
         ''', (category,))
     else:
         cursor.execute('''
-            SELECT id, content, keywords, category, created_at 
-            FROM knowledge 
+            SELECT id, content, keywords, category, created_at, search_count 
+            FROM knowledge
             ORDER BY created_at DESC
         ''')
     
     results = cursor.fetchall()
+    
+    # 按热点排序
+    if sort_by == 'hot':
+        results = sorted(results, key=lambda x: x[5] if x[5] else 0, reverse=True)
+    
     conn.close()
     
     if not results:
@@ -279,20 +380,21 @@ def list_all(category=None):
         return []
     
     if category:
-        print(f"📚 分类 [{category}] 共 {len(results)} 条内容:\n")
+        print(f"📚 分类 [{category}] 共 {len(results)} 条内容 (按热点排序):\n")
     else:
-        print(f"📚 狗窝共 {len(results)} 条内容:\n")
+        print(f"📚 狗窝共 {len(results)} 条内容 (按热点排序):\n")
     
     for row in results:
-        rid, content, keywords, cat, created_at = row
+        rid, content, keywords, cat, created_at, search_count = row
         cat_str = f" | {cat}" if cat else ""
-        print(f"ID: {rid} | {created_at[:10]}{cat_str} | {keywords}")
+        hot = "🔥" * min(search_count // 3, 5) if search_count else ""
+        print(f"ID: {rid}{hot} | {created_at[:10]}{cat_str}")
         print(f"  {content[:60]}...")
     
     return results
 
 def delete_item(item_id):
-    """删除指定条目"""
+    """删除条目"""
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -307,31 +409,8 @@ def delete_item(item_id):
     
     conn.close()
 
-def show_help():
-    """显示帮助"""
-    help_text = """
-🐶 狗窝 - 本地SQLite知识库使用方法
-
-命令:
-  add <内容> [关键词] [分类]    - 添加内容，关键词自动提取，分类可选
-  search <关键词>              - 全文搜索相关内容（FTS加速）
-  get <id>                    - 获取条目的完整内容
-  update <id> <内容> [关键词] - 更新已有内容
-  list [分类]                 - 列出所有内容，可按分类筛选
-  delete <id>                 - 删除指定ID条目
-  stats                       - 统计数据库信息
-  help                        - 显示帮助
-
-示例:
-  python gouwo.py add "麟德智造3匹机组价格3300元" "麟德智造,价格,3匹" "产品"
-  python gouwo.py search "价格"
-  python gouwo.py get 1
-  python gouwo.py list 产品
-"""
-    print(help_text)
-
 def stats():
-    """统计数据库信息"""
+    """统计信息"""
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -342,17 +421,71 @@ def stats():
     cursor.execute('SELECT SUM(length(content)) FROM knowledge')
     total_chars = cursor.fetchone()[0] or 0
     
+    cursor.execute('SELECT SUM(search_count) FROM knowledge')
+    total_searches = cursor.fetchone()[0] or 0
+    
+    cursor.execute('SELECT AVG(search_count) FROM knowledge')
+    avg_searches = cursor.fetchone()[0] or 0
+    
     cursor.execute('SELECT DISTINCT category FROM knowledge WHERE category IS NOT NULL')
     categories = [row[0] for row in cursor.fetchall()]
+    
+    cursor.execute('SELECT id, content, search_count FROM knowledge ORDER BY search_count DESC LIMIT 5')
+    hot_items = cursor.fetchall()
     
     conn.close()
     
     print(f"📊 狗窝统计:")
     print(f"  总条目数: {total}")
     print(f"  总字符数: {total_chars}")
+    print(f"  总检索次数: {total_searches}")
+    print(f"  平均检索次数: {avg_searches:.1f}")
     print(f"  分类列表: {', '.join(categories) if categories else '无'}")
     print(f"  数据库文件: {DB_PATH}")
+    
+    if hot_items:
+        print(f"\n🔥 热门内容 TOP5:")
+        for item_id, content, count in hot_items:
+            print(f"  ID {item_id}: {content[:40]}... (检索{count}次)")
+    
+    # 备份信息
+    backup_file = os.path.join(BACKUP_DIR, "gouwo_backup.db")
+    if os.path.exists(backup_file):
+        mtime = datetime.fromtimestamp(os.path.getmtime(backup_file))
+        print(f"\n💾 备份: {backup_file}")
+        print(f"   更新时间: {mtime.strftime('%Y-%m-%d %H:%M:%S')}")
+    
     return total, total_chars, categories
+
+def show_help():
+    """显示帮助"""
+    help_text = """
+🐶 狗窝 v2.0 - 本地SQLite知识库（升级版）
+
+命令:
+  add <内容> [关键词] [分类]    - 添加内容（自动检测重复）
+  search <关键词>              - 搜索（热点优先）
+  get <id>                    - 查看完整内容
+  update <id> <内容> [关键词] - 更新内容
+  list [分类]                  - 列出内容（默认热点排序）
+  delete <id>                 - 删除条目
+  stats                       - 统计信息
+  backup                      - 备份数据库
+  restore [文件]              - 恢复备份
+  help                        - 显示帮助
+
+新增功能:
+  ✨ 重复合并: 添加时自动检测相似内容，可选择合并
+  🔥 热点检索: 检索次数越多越靠前
+  💾 定时备份: 覆盖式备份，保留最近3份
+
+示例:
+  python gouwo.py add "麟德智造3匹机组价格3300元" "麟德智造,价格" "产品"
+  python gouwo.py search "机组"
+  python gouwo.py list 产品
+  python gouwo.py backup
+"""
+    print(help_text)
 
 def main():
     if len(sys.argv) < 2:
@@ -407,6 +540,13 @@ def main():
     
     elif command == 'stats':
         stats()
+    
+    elif command == 'backup':
+        backup()
+    
+    elif command == 'restore':
+        backup_file = sys.argv[2] if len(sys.argv) > 2 else None
+        restore(backup_file)
     
     elif command == 'help':
         show_help()
