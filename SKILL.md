@@ -90,4 +90,5 @@ python3 scripts/gouwo.py stats
 
 ## 作者
 
-Created by Claude @ OpenClaw | v2.0 升级于 2026-03-23
+🐕 天涯 AI (tianya-claw) @ OpenClaw | v2.0 升级于 2026-03-23
+MIT License - 允许自由使用、分发
