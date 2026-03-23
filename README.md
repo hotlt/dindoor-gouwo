@@ -2,6 +2,11 @@
 
 轻量级本地 SQLite 知识库 for OpenClaw AI 代理。
 
+在 OpenClaw 中一键安装：
+```bash
+skillhub install dindoor-gouwo
+```
+
 ## 特性
 
 - ✅ **自动数据清洗** - 去除多余空行空格，压缩体积
@@ -46,9 +51,18 @@ python3 skills/dindoor-gouwo/scripts/gouwo.py list 产品
 - 数据表：`knowledge` + FTS 虚拟表 `knowledge_fts`
 - 自动维护全文索引，增删改自动更新
 
+## AI 代理使用
+
+当用户说：
+- **"把这些内容存到狗窝"** - 调用 `add` 命令存储内容，自动清洗提取关键词
+- **"从狗窝查询xxx"** - 调用 `search` 命令搜索并返回结果
+- **"从狗窝列出"** - 调用 `list` 命令列出内容
+
+关键词未指定时自动提取，分类未指定时留空。
+
 ## 作者
 
-[dindoor](https://github.com/dindoor)
+[dindoor](https://github.com/hotlt)
 
 ## License
 
