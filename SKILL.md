@@ -1,10 +1,10 @@
 ---
 name: dindoor-gouwo
-description: 轻量级本地 SQLite 知识库（狗窝）v2.0 by dindoor，支持内容存入、全文检索、分类管理、自动清洗、重复合并、热点优先检索、定时备份。
+description: Goowoo 狗窝 - 轻量级本地 SQLite 知识库 v2.0，支持内容存入、全文检索、分类管理、自动清洗、重复合并、热点优先检索、定时备份。
 metadata: {"clawdbot":{"emoji":"🐶","requires": ["python3", "sqlite3"]}}
 ---
 
-# 🐶 狗窝 v2.0 - 本地知识库
+# 🐶 Goowoo 狗窝 v2.0 - 本地知识库
 
 轻量级本地 SQLite 知识库，为 OpenClaw AI 助手打造的持久记忆系统。
 
@@ -22,6 +22,22 @@ metadata: {"clawdbot":{"emoji":"🐶","requires": ["python3", "sqlite3"]}}
 - 🔥 **热点优先检索** - 检索次数越多，排序越靠前，热点内容更快找到
 - 🔄 **重复内容合并** - 相似度检测，自动提示合并，避免数据冗余
 - 💾 **定时备份** - 覆盖式备份，保留最近3份，防止文件损坏
+
+## 安装方式
+
+### 方式一：SkillHub 一键安装（推荐）
+```bash
+skillhub install dindoor-gouwo
+```
+
+### 方式二：Git 手动安装
+```bash
+# GitHub
+git clone https://github.com/hotlt/goowoo.git dindoor-gouwo
+
+# Gitee（国内加速）
+git clone https://gitee.com/dindoor/goowoo.git dindoor-gouwo
+```
 
 ## 命令说明
 
@@ -90,5 +106,5 @@ python3 scripts/gouwo.py stats
 
 ## 作者
 
-🐕 天涯 AI (tianya-claw) @ OpenClaw | v2.0 升级于 2026-03-23
+🐕 Goowoo 天涯 AI (tianya-claw) @ OpenClaw | v2.0 升级于 2026-03-24
 MIT License - 允许自由使用、分发
