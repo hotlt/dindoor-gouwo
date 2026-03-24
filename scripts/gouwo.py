@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """
-狗窝 - 本地SQLite知识库 v2.0
-新增功能：
-1. 重复内容合并（相似度检测）
-2. 检索频率等级（热点优先）
-3. 定时备份（自动覆盖）
+Goowoo 狗窝 - 本地SQLite知识库 v2.1
+v2.0: 重复合并、热点优先、定时备份
+v2.1: 安全加固 - 内容大小限制、关键词长度限制、数据库大小警告
 """
 
 import sqlite3
@@ -20,6 +18,10 @@ import difflib
 # 数据库路径
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "gouwo.db")
 BACKUP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "backups")
+
+# 内容大小限制：单条最大 1MB（防止恶意填充）
+MAX_CONTENT_SIZE = 1024 * 1024  # 1MB
+MAX_KEYWORDS_SIZE = 10 * 1024   # 关键词最大 10KB
 
 # 中文停用词
 STOP_WORDS = {
@@ -125,7 +127,14 @@ def extract_keywords(content, num_keywords=10):
     sorted_words = sorted(word_count.items(), key=lambda x: x[1], reverse=True)
     keywords = [w[0] for w in sorted_words[:num_keywords]]
     
-    return ','.join(keywords)
+    result = ','.join(keywords)
+    # 安全检查：关键词过长则截断
+    if len(result) > MAX_KEYWORDS_SIZE:
+        result = result[:MAX_KEYWORDS_SIZE]
+        # 去掉最后一个不完整的词
+        result = ','.join(result.rsplit(',', 1)[:-1])
+    
+    return result
 
 def clean_content(content):
     """清洗内容"""
@@ -135,6 +144,11 @@ def clean_content(content):
 
 def add_content(content, keywords=None, category=None, auto_merge=True, merge_threshold=0.85):
     """添加内容，支持重复合并"""
+    # 安全检查：内容大小限制
+    if len(content) > MAX_CONTENT_SIZE:
+        print(f"❌ 内容过大！最大 {MAX_CONTENT_SIZE // (1024*1024)}MB，当前 {len(content) // (1024*1024)}MB")
+        return None
+    
     content = clean_content(content)
     content_hash = get_content_hash(content)
     
@@ -433,15 +447,24 @@ def stats():
     cursor.execute('SELECT id, content, search_count FROM knowledge ORDER BY search_count DESC LIMIT 5')
     hot_items = cursor.fetchall()
     
+    # 获取数据库文件大小
+    db_size = os.path.getsize(DB_PATH) if os.path.exists(DB_PATH) else 0
+    
     conn.close()
     
-    print(f"📊 狗窝统计:")
+    print(f"📊 Goowoo 狗窝统计:")
     print(f"  总条目数: {total}")
     print(f"  总字符数: {total_chars}")
     print(f"  总检索次数: {total_searches}")
     print(f"  平均检索次数: {avg_searches:.1f}")
+    print(f"  数据库大小: {db_size / (1024*1024):.2f} MB")
     print(f"  分类列表: {', '.join(categories) if categories else '无'}")
     print(f"  数据库文件: {DB_PATH}")
+    print(f"  安全限制: 单条最大 {MAX_CONTENT_SIZE // (1024*1024)}MB")
+    
+    # 警告：数据库过大
+    if db_size > 100 * 1024 * 1024:  # 超过 100MB
+        print(f"\n⚠️ 警告：数据库已超过 100MB，建议清理或备份后新建库")
     
     if hot_items:
         print(f"\n🔥 热门内容 TOP5:")
