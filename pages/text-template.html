@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小红书文案复制</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 16px;
+        }
+        .content {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 16px;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 16px;
+        }
+        .btn {
+            display: inline-block;
+            background: #07c160;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+        }
+        .btn:hover {
+            background: #06ad56;
+        }
+        .image-link {
+            display: block;
+            margin-top: 16px;
+            color: #1d9bf0;
+            font-size: 14px;
+        }
+        .success {
+            color: #07c160;
+            font-size: 14px;
+            margin-top: 12px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 小红书文案 - 周二：螺杆机组优势</h1>
+        
+        <div class="content" id="content">螺杆机组优势 | 为什么大冷库都用它？
+
+螺杆机组为什么成为大型冷库首选？
+
+1️⃣ 制冷量大
+单台可达1000冷吨以上
+
+2️⃣ 运行稳定
+parts少，故障率低
+
+3️⃣ 调节灵活
+部分负荷效率高
+
+4️⃣ 使用寿命长
+正常可用15-20年
+
+5️⃣ 噪音低
+比活塞机安静很多
+
+📍 适合：500平以上大型冷库
+
+话题标签：
+#螺杆机组 #冷库机组 #制冷设备 #大型冷库</div>
+        
+        <button class="btn" onclick="copyText()">📋 复制文案</button>
+        <div class="success" id="success">✅ 复制成功！去小红书粘贴吧</div>
+        
+        <a class="image-link" href="https://s.zl6.cn/images/xiaohongshu-luogan.png?v=20260324" target="_blank">
+            🖼️ 点击下载配图
+        </a>
+    </div>
+    
+    <script>
+        function copyText() {
+            const text = document.getElementById('content').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                document.getElementById('success').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('success').style.display = 'none';
+                }, 3000);
+            }).catch(err => {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                document.getElementById('success').style.display = 'block';
+            });
+        }
+    </script>
+</body>
+</html>

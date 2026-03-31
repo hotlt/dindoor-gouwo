@@ -3,189 +3,518 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🐕 Goowoo 狗窝 - 本地知识库 for OpenClaw</title>
+    <title>Goowoo 狗窝 - 本地知识库 for OpenClaw</title>
+    <meta name="description" content="轻量级本地 SQLite 知识库，随存随取、永不丢失。零依赖、隐私安全，让你的 AI 助手秒变私人知识管家。">
+    
+    <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    
     <style>
-        * {
+        /* ============================================
+           CSS Reset & Base
+           ============================================ */
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
+        /* ============================================
+           Design System - Modern Light Theme
+           ============================================ */
         :root {
-            --primary: #6366F1;
-            --primary-dark: #4F46E5;
-            --secondary: #818CF8;
-            --cta: #10B981;
-            --cta-dark: #059669;
-            --bg: #F5F3FF;
-            --text: #1E1B4B;
-            --text-light: #475569;
-            --white: #FFFFFF;
-            --border: #E0E7FF;
+            /* Primary Colors - Using oklch for modern color definitions */
+            --primary: oklch(60% 0.22 280);
+            --primary-dark: oklch(55% 0.24 280);
+            --primary-light: oklch(95% 0.05 280);
+            --primary-subtle: oklch(60% 0.22 280 / 0.1);
+            
+            /* Secondary Colors */
+            --secondary: oklch(65% 0.18 280);
+            --secondary-subtle: oklch(65% 0.18 280 / 0.1);
+            
+            /* CTA Colors */
+            --cta: oklch(65% 0.22 150);
+            --cta-dark: oklch(55% 0.24 150);
+            --cta-subtle: oklch(65% 0.22 150 / 0.1);
+            
+            /* Background & Surface */
+            --bg: oklch(97% 0.01 280);
+            --bg-elevated: oklch(100% 0 0);
+            --bg-hover: oklch(95% 0.01 280);
+            
+            /* Text Colors */
+            --text: oklch(20% 0.03 280);
+            --text-light: oklch(45% 0.04 280);
+            --text-muted: oklch(55% 0.03 280);
+            
+            /* Borders */
+            --border: oklch(60% 0.22 280 / 0.15);
+            --border-strong: oklch(60% 0.22 280 / 0.25);
+            
+            /* Feedback Colors */
+            --success: oklch(65% 0.2 150);
+            --success-bg: oklch(95% 0.05 150);
+            --warning: oklch(70% 0.18 80);
+            --warning-bg: oklch(95% 0.04 80);
+            
+            /* Typography Scale */
+            --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+            
+            /* Spacing Scale (4px base) */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --space-10: 2.5rem;
+            --space-12: 3rem;
+            --space-16: 4rem;
+            --space-20: 5rem;
+            
+            /* Border Radius */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --radius-2xl: 1.25rem;
+            --radius-3xl: 1.5rem;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px 0 oklch(0% 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px oklch(0% 0 0 / 0.1), 0 2px 4px -2px oklch(0% 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px oklch(0% 0 0 / 0.1), 0 4px 6px -4px oklch(0% 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px oklch(0% 0 0 / 0.1), 0 8px 10px -6px oklch(0% 0 0 / 0.1);
+            --shadow-glow: 0 0 20px oklch(60% 0.22 280 / 0.3);
+            
+            /* Animation */
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+            --duration-fast: 150ms;
+            --duration-normal: 250ms;
+            --duration-slow: 350ms;
+        }
+
+        /* ============================================
+           Base Styles
+           ============================================ */
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: var(--font-sans);
             color: var(--text);
             background: var(--bg);
             line-height: 1.6;
+            overflow-x: hidden;
         }
 
-        /* Navigation */
+        /* ============================================
+           Utility Classes
+           ============================================ */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--space-6);
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* ============================================
+           Navigation
+           ============================================ */
         nav {
             position: fixed;
-            top: 16px;
-            left: 16px;
-            right: 16px;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(12px);
-            border-radius: 12px;
-            padding: 12px 24px;
+            top: var(--space-4);
+            left: var(--space-4);
+            right: var(--space-4);
+            background: oklch(100% 0 0 / 0.95);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: var(--radius-xl);
+            padding: var(--space-3) var(--space-4);
             display: flex;
             justify-content: space-between;
             align-items: center;
             z-index: 100;
             border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+            transition: all var(--duration-normal) var(--ease-out);
+        }
+
+        nav.scrolled {
+            top: var(--space-2);
+            left: var(--space-2);
+            right: var(--space-2);
+            box-shadow: var(--shadow-lg);
         }
 
         .nav-brand {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: var(--space-2);
             font-weight: 700;
-            font-size: 18px;
+            font-size: 1rem;
             color: var(--primary);
+            text-decoration: none;
+            transition: transform var(--duration-fast) var(--ease-out);
+            flex-shrink: 0;
+        }
+
+        .nav-brand:hover {
+            transform: scale(1.02);
+        }
+
+        .nav-brand img {
+            height: 28px;
+            width: auto;
         }
 
         .nav-links {
             display: flex;
-            gap: 24px;
+            gap: var(--space-4);
         }
 
         .nav-links a {
             color: var(--text-light);
             text-decoration: none;
             font-weight: 500;
-            font-size: 14px;
-            transition: color 0.2s;
+            font-size: 0.8125rem;
+            transition: color var(--duration-fast) var(--ease-out);
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width var(--duration-fast) var(--ease-out);
         }
 
         .nav-links a:hover {
             color: var(--primary);
         }
 
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
         .nav-cta {
             background: var(--cta);
             color: white;
-            padding: 8px 20px;
-            border-radius: 8px;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-lg);
             text-decoration: none;
             font-weight: 600;
-            font-size: 14px;
-            transition: background 0.2s;
-            cursor-pointer;
+            font-size: 0.8125rem;
+            transition: all var(--duration-fast) var(--ease-out);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            border: 1.5px solid transparent;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .nav-cta:hover {
             background: var(--cta-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px oklch(65% 0.22 150 / 0.3);
         }
 
-        /* Hero Section */
+        .nav-cta:active {
+            transform: translateY(0);
+        }
+
+        /* Mobile Menu Toggle */
+        .nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: var(--space-2);
+            color: var(--text);
+        }
+
+        /* Mobile Navigation Overlay */
+        .nav-menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+            opacity: 0;
+            transition: opacity var(--duration-normal) var(--ease-out);
+        }
+
+        .nav-menu-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .nav-links.mobile-open {
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 70px;
+            left: var(--space-4);
+            right: var(--space-4);
+            background: oklch(100% 0 0 / 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-xl);
+            padding: var(--space-4);
+            gap: var(--space-3);
+            box-shadow: var(--shadow-xl);
+            z-index: 100;
+            animation: slideDown 0.3s var(--ease-out);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .nav-links.mobile-open a {
+            font-size: 1rem;
+            padding: var(--space-2) 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-links.mobile-open a:last-child {
+            border-bottom: none;
+        }
+
+        .nav-cta.mobile-open {
+            display: none;
+        }
+
+        /* ============================================
+           Hero Section
+           ============================================ */
         .hero {
-            padding: 140px 24px 80px;
+            padding: 140px var(--space-6) 100px;
             text-align: center;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, oklch(60% 0.22 280 / 0.08) 0%, transparent 70%),
+                var(--bg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 800px;
+            height: 100%;
+            background: radial-gradient(circle at center, oklch(60% 0.22 280 / 0.03) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
             max-width: 900px;
             margin: 0 auto;
         }
 
         .hero-badge {
-            display: inline-block;
-            background: var(--primary);
-            color: white;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            background: var(--primary-subtle);
+            color: var(--primary);
+            padding: var(--space-2) var(--space-4);
+            border-radius: 9999px;
+            font-size: 0.75rem;
             font-weight: 600;
-            margin-bottom: 24px;
+            margin-bottom: var(--space-8);
+            border: 1px solid oklch(60% 0.22 280 / 0.2);
         }
 
         .hero h1 {
-            font-size: 56px;
-            font-weight: 700;
-            margin-bottom: 16px;
+            font-size: clamp(2.5rem, 6vw, 3.5rem);
+            font-weight: 800;
+            margin-bottom: var(--space-5);
             color: var(--text);
             line-height: 1.1;
+            letter-spacing: -0.02em;
         }
 
-        .hero h1 span {
-            color: var(--primary);
+        .hero h1 .highlight {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-logo {
+            height: 1.2em;
+            width: auto;
+            vertical-align: middle;
+            margin-right: var(--space-3);
+            filter: drop-shadow(0 2px 4px oklch(0% 0 0 / 0.1));
         }
 
         .hero-subtitle {
-            font-size: 20px;
+            font-size: clamp(1.125rem, 2.5vw, 1.25rem);
             color: var(--text-light);
-            margin-bottom: 40px;
+            margin-bottom: var(--space-10);
             max-width: 600px;
             margin-left: auto;
             margin-right: auto;
+            line-height: 1.7;
         }
 
         .hero-cta-group {
             display: flex;
-            gap: 16px;
+            gap: var(--space-4);
             justify-content: center;
             flex-wrap: wrap;
+        }
+
+        /* ============================================
+           Buttons
+           ============================================ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            font-weight: 600;
+            font-size: 1rem;
+            padding: var(--space-4) var(--space-8);
+            border-radius: var(--radius-xl);
+            text-decoration: none;
+            transition: all var(--duration-fast) var(--ease-out);
+            cursor: pointer;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, oklch(100% 0 0 / 0.1) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity var(--duration-fast) var(--ease-out);
+        }
+
+        .btn:hover::before {
+            opacity: 1;
         }
 
         .btn-primary {
             background: var(--primary);
             color: white;
-            padding: 14px 32px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 16px;
-            transition: background 0.2s;
-            cursor-pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            box-shadow: var(--shadow-md), 0 0 0 1px oklch(60% 0.22 280 / 0.5);
         }
 
         .btn-primary:hover {
             background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg), var(--shadow-glow), 0 0 0 1px oklch(60% 0.22 280 / 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
         }
 
         .btn-secondary {
-            background: white;
+            background: var(--bg-elevated);
             color: var(--text);
-            padding: 14px 32px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 16px;
-            border: 2px solid var(--border);
-            transition: border-color 0.2s, background 0.2s;
-            cursor-pointer;
+            border: 1.5px solid var(--border);
         }
 
         .btn-secondary:hover {
             border-color: var(--primary);
-            background: var(--bg);
+            background: var(--primary-subtle);
+            color: var(--primary);
+            transform: translateY(-2px);
         }
 
-        /* Story Section */
+        .btn-secondary:active {
+            transform: translateY(0);
+        }
+
+        /* ============================================
+           Section Styles
+           ============================================ */
+        section {
+            padding: var(--space-20) var(--space-6);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: var(--space-12);
+        }
+
+        .section-title {
+            font-size: clamp(1.75rem, 4vw, 2.25rem);
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: var(--space-4);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .section-subtitle {
+            color: var(--text-light);
+            font-size: 1.125rem;
+        }
+
+        /* ============================================
+           Story Section
+           ============================================ */
         .story {
-            background: white;
-            padding: 80px 24px;
-            border-radius: 24px;
-            margin: 0 24px 80px;
-            max-width: 900px;
-            margin-left: auto;
-            margin-right: auto;
+            background: var(--bg-elevated);
+            padding: var(--space-16) var(--space-6);
+            border-radius: var(--radius-3xl);
+            margin: 0 var(--space-6) var(--space-20);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
         }
 
         .story-content {
@@ -194,154 +523,340 @@
         }
 
         .story h2 {
-            font-size: 28px;
-            margin-bottom: 24px;
+            font-size: 1.75rem;
+            margin-bottom: var(--space-6);
             color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
         }
 
         .story p {
             color: var(--text-light);
-            margin-bottom: 16px;
-            font-size: 16px;
+            margin-bottom: var(--space-4);
+            font-size: 1.0625rem;
+            line-height: 1.8;
         }
 
         .story-quote {
-            background: var(--bg);
+            background: var(--primary-light);
             border-left: 4px solid var(--primary);
-            padding: 20px 24px;
-            border-radius: 0 12px 12px 0;
-            margin-top: 24px;
+            padding: var(--space-6);
+            border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+            margin-top: var(--space-8);
+            position: relative;
+        }
+
+        .story-quote::before {
+            content: '"';
+            position: absolute;
+            top: var(--space-4);
+            left: var(--space-6);
+            font-size: 4rem;
+            color: var(--primary);
+            opacity: 0.2;
+            font-family: Georgia, serif;
+            line-height: 1;
         }
 
         .story-quote p {
-            color: var(--primary);
+            color: var(--primary-dark);
             font-weight: 600;
-            font-size: 18px;
+            font-size: 1.125rem;
             margin: 0;
+            position: relative;
+            z-index: 1;
         }
 
-        /* Features Section */
+        /* ============================================
+           Features Section
+           ============================================ */
         .features {
-            padding: 0 24px 80px;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        .features h2 {
-            text-align: center;
-            font-size: 36px;
-            margin-bottom: 48px;
-            color: var(--text);
+            padding: 0 var(--space-6) var(--space-20);
         }
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-6);
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         .feature-card {
-            background: white;
-            border-radius: 16px;
-            padding: 28px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-8);
             border: 1px solid var(--border);
-            transition: border-color 0.2s, transform 0.2s;
-            cursor-pointer;
+            transition: all var(--duration-normal) var(--ease-out);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--primary-subtle) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity var(--duration-normal) var(--ease-out);
         }
 
         .feature-card:hover {
             border-color: var(--primary);
-            transform: translateY(-2px);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
         }
 
         .feature-icon {
-            width: 48px;
-            height: 48px;
-            background: var(--bg);
-            border-radius: 12px;
+            width: 56px;
+            height: 56px;
+            background: var(--primary-subtle);
+            border-radius: var(--radius-xl);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 16px;
-            font-size: 24px;
+            margin-bottom: var(--space-5);
+            position: relative;
+            z-index: 1;
+            color: var(--primary);
         }
 
         .feature-card h3 {
-            font-size: 18px;
-            margin-bottom: 8px;
+            font-size: 1.125rem;
+            margin-bottom: var(--space-2);
             color: var(--text);
+            position: relative;
+            z-index: 1;
         }
 
         .feature-card p {
             color: var(--text-light);
-            font-size: 14px;
+            font-size: 0.9375rem;
+            line-height: 1.7;
+            position: relative;
+            z-index: 1;
         }
 
-        /* Commands Section */
+        /* ============================================
+           Commands Section
+           ============================================ */
         .commands {
-            background: white;
-            padding: 80px 24px;
-            border-radius: 24px;
-            margin: 0 24px 80px;
-            max-width: 900px;
-            margin-left: auto;
-            margin-right: auto;
+            background: var(--bg-elevated);
+            padding: var(--space-16) var(--space-6);
+            border-radius: var(--radius-3xl);
+            margin: 0 var(--space-6) var(--space-20);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
         }
 
-        .commands h2 {
-            text-align: center;
-            font-size: 36px;
-            margin-bottom: 40px;
-            color: var(--text);
+        .commands-table-container {
+            overflow-x: auto;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
         }
 
         .commands-table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 600px;
         }
 
         .commands-table th {
             text-align: left;
-            padding: 12px 16px;
+            padding: var(--space-4) var(--space-5);
             background: var(--bg);
             font-weight: 600;
-            font-size: 14px;
+            font-size: 0.875rem;
             color: var(--text);
-            border-radius: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .commands-table th:first-child {
+            border-radius: var(--radius-xl) 0 0 0;
+        }
+
+        .commands-table th:last-child {
+            border-radius: 0 var(--radius-xl) 0 0;
         }
 
         .commands-table td {
-            padding: 14px 16px;
+            padding: var(--space-4) var(--space-5);
             border-bottom: 1px solid var(--border);
-            font-size: 14px;
+            font-size: 0.9375rem;
         }
 
         .commands-table tr:last-child td {
             border-bottom: none;
         }
 
-        code {
-            background: var(--bg);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-family: 'SF Mono', Monaco, monospace;
-            font-size: 13px;
-            color: var(--primary);
+        .commands-table tr:hover td {
+            background: var(--bg-hover);
         }
 
-        /* Changelog */
-        .changelog {
-            background: linear-gradient(180deg, #f8fafc 0%, white 100%);
-            padding: 80px 24px;
-            max-width: 1100px;
+        code {
+            background: var(--primary-light);
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-md);
+            font-family: var(--font-mono);
+            font-size: 0.8125rem;
+            color: var(--primary);
+            border: 1px solid oklch(60% 0.22 280 / 0.1);
+        }
+
+        .commands-table code {
+            font-weight: 600;
+        }
+
+        /* ============================================
+           Install Section
+           ============================================ */
+        .install {
+            background: var(--bg-elevated);
+            padding: var(--space-16) var(--space-6);
+            border-radius: var(--radius-3xl);
+            margin: 0 var(--space-6) var(--space-20);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .install-content {
+            max-width: 700px;
             margin: 0 auto;
         }
 
-        .changelog h2 {
-            text-align: center;
-            font-size: 36px;
-            margin-bottom: 48px;
+        .install-method {
+            margin-bottom: var(--space-10);
+            text-align: left;
+        }
+
+        .install-method:last-child {
+            margin-bottom: 0;
+        }
+
+        .install-method h3 {
+            font-size: 1.125rem;
+            margin-bottom: var(--space-4);
             color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .install-code {
+            background: oklch(20% 0.02 280);
+            border-radius: var(--radius-xl);
+            padding: var(--space-5);
+            margin-bottom: var(--space-4);
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .install-code::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, oklch(60% 0.22 280 / 0.5), transparent);
+        }
+
+        .install-code code {
+            background: transparent;
+            color: oklch(90% 0.02 280);
+            font-size: 0.9375rem;
+            line-height: 1.8;
+            display: block;
+        }
+
+        .install-code code.comment {
+            color: oklch(55% 0.03 280);
+        }
+
+        .install-note {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+            font-style: italic;
+            padding: var(--space-4);
+            background: var(--bg);
+            border-radius: var(--radius-lg);
+            border: 1px dashed var(--border);
+        }
+
+        /* ============================================
+           Scenarios Section
+           ============================================ */
+        .scenarios {
+            padding: 0 var(--space-6) var(--space-20);
+        }
+
+        .scenarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: var(--space-5);
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .scenario {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: var(--space-8) var(--space-6);
+            border-radius: var(--radius-2xl);
+            text-align: center;
+            transition: all var(--duration-normal) var(--ease-out);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scenario::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, oklch(100% 0 0 / 0.1) 0%, transparent 50%);
+        }
+
+        .scenario:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl), var(--shadow-glow);
+        }
+
+        .scenario-icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--space-4);
+            position: relative;
+            z-index: 1;
+        }
+
+        .scenario h4 {
+            font-size: 1.125rem;
+            margin-bottom: var(--space-2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .scenario p {
+            font-size: 0.9375rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ============================================
+           Changelog Section
+           ============================================ */
+        .changelog {
+            background: linear-gradient(180deg, oklch(98% 0.01 280) 0%, var(--bg-elevated) 100%);
+            padding: var(--space-16) var(--space-6);
         }
 
         .changelog-list {
@@ -350,232 +865,335 @@
         }
 
         .changelog-item {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            background: var(--bg-elevated);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-6);
+            margin-bottom: var(--space-6);
+            box-shadow: var(--shadow-md);
             border-left: 4px solid var(--primary);
+            transition: all var(--duration-normal) var(--ease-out);
+        }
+
+        .changelog-item:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-lg);
         }
 
         .changelog-date {
-            font-size: 14px;
-            color: var(--text-light);
-            margin-bottom: 12px;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: var(--space-4);
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
         }
 
         .changelog-content ul {
-            margin: 8px 0 0 0;
-            padding-left: 20px;
+            margin: var(--space-3) 0 0 0;
+            padding-left: var(--space-6);
         }
 
         .changelog-content li {
             color: var(--text);
             line-height: 1.8;
-            font-size: 14px;
+            font-size: 0.9375rem;
+            margin-bottom: var(--space-2);
         }
 
         .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-1);
+            padding: var(--space-1) var(--space-3);
+            border-radius: 9999px;
+            font-size: 0.75rem;
             font-weight: 600;
-            margin-bottom: 8px;
-            background: #e0e7ff;
-            color: #4f46e5;
+            margin-bottom: var(--space-3);
         }
 
-        .badge.security {
-            background: #fef3c7;
-            color: #d97706;
+        .badge-new {
+            background: var(--success-bg);
+            color: var(--success);
         }
 
-        .badge.new {
-            background: #d1fae5;
-            color: #059669;
+        .badge-security {
+            background: var(--warning-bg);
+            color: var(--warning);
         }
 
-        /* Scenarios */
-        .scenarios {
-            padding: 0 24px 80px;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        .scenarios h2 {
-            text-align: center;
-            font-size: 36px;
-            margin-bottom: 48px;
-            color: var(--text);
-        }
-
-        .scenarios-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .scenario {
-            background: var(--primary);
-            color: white;
-            padding: 24px;
-            border-radius: 16px;
-            text-align: center;
-            transition: transform 0.2s;
-            cursor-pointer;
-        }
-
-        .scenario:hover {
-            transform: translateY(-2px);
-        }
-
-        .scenario-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
-        }
-
-        .scenario h4 {
-            font-size: 16px;
-            margin-bottom: 8px;
-        }
-
-        .scenario p {
-            font-size: 13px;
-            opacity: 0.9;
-        }
-
-        /* Install Section */
-        .install {
-            background: white;
-            padding: 80px 24px;
-            border-radius: 24px;
-            margin: 0 24px 80px;
-            max-width: 900px;
-            margin-left: auto;
-            margin-right: auto;
-            text-align: center;
-        }
-
-        .install h2 {
-            font-size: 36px;
-            margin-bottom: 32px;
-            color: var(--text);
-        }
-
-        .install-content {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .install-content p {
-            color: var(--text-light);
-            margin-bottom: 16px;
-            font-size: 16px;
-        }
-
-        .install-code {
-            background: var(--bg);
-            border-radius: 8px;
-            padding: 16px 24px;
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        .install-code code {
-            background: transparent;
+        .badge-default {
+            background: var(--primary-light);
             color: var(--primary);
-            font-size: 15px;
         }
 
-        .install-note {
-            color: var(--text-light);
-            font-size: 14px;
-            font-style: italic;
-        }
-
-        /* Footer */
+        /* ============================================
+           Footer
+           ============================================ */
         footer {
-            background: white;
-            padding: 60px 24px;
+            background: var(--bg-elevated);
+            padding: var(--space-16) var(--space-6);
             text-align: center;
-            border-radius: 24px 24px 0 0;
-            margin: 0 24px;
+            border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
+            margin: 0 var(--space-6);
+            border: 1px solid var(--border);
+            border-bottom: none;
         }
 
         .footer-logo {
-            font-size: 48px;
-            margin-bottom: 16px;
+            margin-bottom: var(--space-5);
+        }
+
+        .footer-logo img {
+            height: 64px;
+            width: auto;
         }
 
         .footer-tagline {
-            font-size: 18px;
+            font-size: 1.25rem;
             color: var(--primary);
-            font-weight: 600;
-            margin-bottom: 16px;
+            font-weight: 700;
+            margin-bottom: var(--space-3);
         }
 
         .footer-desc {
             color: var(--text-light);
-            font-size: 14px;
-            margin-bottom: 24px;
+            font-size: 1rem;
+            margin-bottom: var(--space-8);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-6);
+            margin-bottom: var(--space-8);
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color var(--duration-fast) var(--ease-out);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
         }
 
         .footer-license {
-            font-size: 13px;
-            color: var(--text-light);
+            font-size: 0.875rem;
+            color: var(--text-muted);
         }
 
         .footer-license a {
             color: var(--primary);
             text-decoration: none;
+            font-weight: 500;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 36px;
-            }
+        .footer-license a:hover {
+            text-decoration: underline;
+        }
 
-            .hero-subtitle {
-                font-size: 16px;
+        /* ============================================
+           Animation & Effects
+           ============================================ */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeInUp 0.6s var(--ease-out) forwards;
+        }
+
+        /* ============================================
+           Responsive Design
+           ============================================ */
+        @media (max-width: 768px) {
+            :root {
+                --space-6: 0.875rem;
+                --space-8: 1.25rem;
+                --space-10: 1.5rem;
+                --space-12: 2rem;
+                --space-16: 2.5rem;
+                --space-20: 3rem;
             }
 
             nav {
-                padding: 10px 16px;
+                padding: var(--space-2) var(--space-3);
             }
 
             .nav-links {
                 display: none;
             }
 
-            .features h2,
-            .commands h2,
-            .scenarios h2 {
-                font-size: 28px;
+            .nav-toggle {
+                display: flex;
+            }
+
+            .nav-brand img {
+                height: 24px;
+            }
+
+            .hero {
+                padding-top: 100px;
+                padding-bottom: 60px;
+            }
+
+            .hero h1 {
+                font-size: 1.75rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1rem;
             }
 
             .story,
-            .commands {
-                margin-left: 16px;
-                margin-right: 16px;
-                padding: 60px 16px;
+            .commands,
+            .install {
+                margin-left: var(--space-4);
+                margin-right: var(--space-4);
+                padding: var(--space-10) var(--space-4);
+            }
+
+            .story p {
+                font-size: 0.9375rem;
             }
 
             footer {
-                margin: 0 16px;
+                margin: 0 var(--space-4);
+                padding: var(--space-10) var(--space-4);
             }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .scenarios-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .commands-table-container {
+                font-size: 0.8125rem;
+            }
+
+            .commands-table td,
+            .commands-table th {
+                padding: var(--space-3);
+            }
+        }
+
+        @media (max-width: 480px) {
+            nav {
+                top: var(--space-2);
+                left: var(--space-2);
+                right: var(--space-2);
+            }
+
+            .nav-brand span {
+                display: none;
+            }
+
+            .scenarios-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-cta-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .hero-cta-group .btn {
+                width: 100%;
+            }
+
+            .install-method h3 {
+                font-size: 1rem;
+            }
+
+            .install-code {
+                padding: var(--space-4);
+            }
+
+            .install-code code {
+                font-size: 0.8125rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .feature-card {
+                padding: var(--space-5);
+            }
+
+            .feature-card h3 {
+                font-size: 1rem;
+            }
+        }
+
+        /* ============================================
+           Accessibility
+           ============================================ */
+        :focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            html {
+                scroll-behavior: auto;
+            }
+        }
+
+        /* ============================================
+           Scrollbar Styling
+           ============================================ */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-strong);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
         }
     </style>
 </head>
 <body>
     <!-- Navigation -->
-    <nav>
-        <div class="nav-brand">
-            <img src="https://s.zl6.cn/images/goowoo.png?v=202603241000" alt="Goowoo" height="32" style="vertical-align: middle; margin-right: 4px;">
-        </div>
-        <div class="nav-links">
+    <nav id="navbar" role="navigation" aria-label="主导航">
+        <a href="#" class="nav-brand">
+            <img src="https://s.zl6.cn/images/goowoo.png?v=202603241000" alt="Goowoo Logo">
+            <span>Goowoo</span>
+        </a>
+        
+        <div class="nav-links" id="navLinks">
             <a href="#story">故事</a>
             <a href="#features">特性</a>
             <a href="#commands">命令</a>
@@ -583,29 +1201,58 @@
             <a href="#scenarios">场景</a>
             <a href="#changelog">更新</a>
         </div>
-        <a href="#" class="nav-cta">🚀 立即使用</a>
+        
+        <a href="#install" class="nav-cta" id="navCta">
+            <i data-lucide="rocket" class="w-4 h-4"></i>
+            立即使用
+        </a>
+        
+        <button class="nav-toggle" id="navToggle" aria-label="打开菜单" aria-expanded="false">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
     </nav>
+    
+    <!-- Mobile Menu Overlay -->
+    <div class="nav-menu-overlay" id="navOverlay"></div>
 
     <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-badge">MIT License · 开源免费</div>
-        <h1><img src="https://s.zl6.cn/images/goowoo.png?v=202603241000" alt="Goowoo" height="60" style="vertical-align: middle; margin-right: 8px;">让 AI 拥有一个<span>有序的狗窝</span></h1>
-        <p class="hero-subtitle">
-            轻量级本地 SQLite 知识库，随存随取、永不丢失。
-            零依赖、隐私安全，让你的 AI 助手秒变私人知识管家。
-        </p>
-        <div class="hero-cta-group">
-            <a href="#install" class="btn-primary">
-                <span>📦</span> 安装技能
-            </a>
-            <a href="#story" class="btn-secondary">了解更多</a>
+    <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i data-lucide="shield-check" class="w-3 h-3"></i>
+                MIT License · 开源免费
+            </div>
+            
+            <h1 id="hero-title">
+                <img src="https://s.zl6.cn/images/goowoo.png?v=202603241000" alt="Goowoo" class="hero-logo">
+                让 AI 拥有一个<span class="highlight">有序的狗窝</span>
+            </h1>
+            
+            <p class="hero-subtitle">
+                轻量级本地 SQLite 知识库，随存随取、永不丢失。
+                零依赖、隐私安全，让你的 AI 助手秒变私人知识管家。
+            </p>
+            
+            <div class="hero-cta-group">
+                <a href="#install" class="btn btn-primary">
+                    <i data-lucide="package" class="w-5 h-5"></i>
+                    安装技能
+                </a>
+                <a href="#story" class="btn btn-secondary">
+                    <i data-lucide="book-open" class="w-5 h-5"></i>
+                    了解更多
+                </a>
+            </div>
         </div>
     </section>
 
     <!-- Story Section -->
-    <section class="story" id="story">
+    <section class="story" id="story" aria-labelledby="story-title">
         <div class="story-content">
-            <h2>💭 为什么叫「狗窝」？</h2>
+            <h2 id="story-title">
+                <i data-lucide="quote" class="w-6 h-6"></i>
+                为什么叫「狗窝」？
+            </h2>
             <p>以前认真投入工作的时候，我喜欢在桌上堆放大量的资料、书籍、笔记。</p>
             <p>同事们走进办公室，总会说："你这屋像个狗窝！"</p>
             <p>但正是这种方式，让我在需要什么资料时能马上找到，效率极高。</p>
@@ -617,200 +1264,403 @@
     </section>
 
     <!-- Features Section -->
-    <section class="features" id="features">
-        <h2>✨ 核心特性</h2>
+    <section class="features" id="features" aria-labelledby="features-title">
+        <div class="section-header">
+            <h2 id="features-title" class="section-title">
+                <i data-lucide="sparkles" class="w-8 h-8"></i>
+                核心特性
+            </h2>
+            <p class="section-subtitle">专为效率设计，让知识管理变得简单</p>
+        </div>
+        
         <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">🏠</div>
+            <article class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="database" class="w-6 h-6"></i>
+                </div>
                 <h3>本地存储</h3>
                 <p>SQLite 轻量数据库，零依赖，隐私安全。你的数据只属于你。</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔍</div>
+            </article>
+            
+            <article class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="search" class="w-6 h-6"></i>
+                </div>
                 <h3>全文检索</h3>
                 <p>FTS5 全文索引，毫秒级搜索。想找什么，一呼即应。</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🏷️</div>
+            </article>
+            
+            <article class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="tags" class="w-6 h-6"></i>
+                </div>
                 <h3>分类管理</h3>
                 <p>给内容打标签，按分类筛选。井井有条，随存随取。</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔥</div>
+            </article>
+            
+            <article class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="flame" class="w-6 h-6"></i>
+                </div>
                 <h3>热点优先</h3>
                 <p>越常用的内容排序越靠前。常用信息，一眼看到。</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔄</div>
+            </article>
+            
+            <article class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="git-merge" class="w-6 h-6"></i>
+                </div>
                 <h3>重复合并</h3>
                 <p>相似内容自动检测，避免冗余。知识库保持精简。</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">💾</div>
+            </article>
+            
+            <article class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="save" class="w-6 h-6"></i>
+                </div>
                 <h3>定时备份</h3>
                 <p>覆盖式备份，数据永不丢失。安心使用，无后顾之忧。</p>
-            </div>
+            </article>
         </div>
     </section>
 
     <!-- Commands Section -->
-    <section class="commands" id="commands">
-        <h2>📖 快速上手</h2>
-        <table class="commands-table">
-            <thead>
-                <tr>
-                    <th>命令</th>
-                    <th>用法</th>
-                    <th>说明</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><code>add</code></td>
-                    <td><code>add "内容" [关键词] [分类]</code></td>
-                    <td>添加内容，自动提取关键词</td>
-                </tr>
-                <tr>
-                    <td><code>search</code></td>
-                    <td><code>search "关键词"</code></td>
-                    <td>FTS 全文搜索，热点优先</td>
-                </tr>
-                <tr>
-                    <td><code>get</code></td>
-                    <td><code>get &lt;id&gt;</code></td>
-                    <td>获取条目完整内容</td>
-                </tr>
-                <tr>
-                    <td><code>update</code></td>
-                    <td><code>update &lt;id&gt; "新内容"</code></td>
-                    <td>更新已有内容</td>
-                </tr>
-                <tr>
-                    <td><code>list</code></td>
-                    <td><code>list [分类]</code></td>
-                    <td>列出所有内容</td>
-                </tr>
-                <tr>
-                    <td><code>delete</code></td>
-                    <td><code>delete &lt;id&gt;</code></td>
-                    <td>删除指定条目</td>
-                </tr>
-                <tr>
-                    <td><code>stats</code></td>
-                    <td><code>stats</code></td>
-                    <td>查看统计信息</td>
-                </tr>
-                <tr>
-                    <td><code>backup</code></td>
-                    <td><code>backup</code></td>
-                    <td>备份数据库</td>
-                </tr>
-            </tbody>
-        </table>
+    <section class="commands" id="commands" aria-labelledby="commands-title">
+        <div class="section-header">
+            <h2 id="commands-title" class="section-title">
+                <i data-lucide="terminal" class="w-8 h-8"></i>
+                快速上手
+            </h2>
+            <p class="section-subtitle">简单易用的命令，即刻开始管理你的知识</p>
+        </div>
+        
+        <div class="commands-table-container">
+            <table class="commands-table">
+                <thead>
+                    <tr>
+                        <th scope="col">命令</th>
+                        <th scope="col">用法</th>
+                        <th scope="col">说明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>add</code></td>
+                        <td><code>add "内容" [关键词] [分类]</code></td>
+                        <td>添加内容，自动提取关键词</td>
+                    </tr>
+                    <tr>
+                        <td><code>search</code></td>
+                        <td><code>search "关键词"</code></td>
+                        <td>FTS 全文搜索，热点优先</td>
+                    </tr>
+                    <tr>
+                        <td><code>get</code></td>
+                        <td><code>get &lt;id&gt;</code></td>
+                        <td>获取条目完整内容</td>
+                    </tr>
+                    <tr>
+                        <td><code>update</code></td>
+                        <td><code>update &lt;id&gt; "新内容"</code></td>
+                        <td>更新已有内容</td>
+                    </tr>
+                    <tr>
+                        <td><code>list</code></td>
+                        <td><code>list [分类]</code></td>
+                        <td>列出所有内容</td>
+                    </tr>
+                    <tr>
+                        <td><code>delete</code></td>
+                        <td><code>delete &lt;id&gt;</code></td>
+                        <td>删除指定条目</td>
+                    </tr>
+                    <tr>
+                        <td><code>stats</code></td>
+                        <td><code>stats</code></td>
+                        <td>查看统计信息</td>
+                    </tr>
+                    <tr>
+                        <td><code>backup</code></td>
+                        <td><code>backup</code></td>
+                        <td>备份数据库</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </section>
 
     <!-- Install Section -->
-    <section class="install" id="install">
-        <h2>🚀 立即安装</h2>
+    <section class="install" id="install" aria-labelledby="install-title">
+        <div class="section-header">
+            <h2 id="install-title" class="section-title">
+                <i data-lucide="download" class="w-8 h-8"></i>
+                立即安装
+            </h2>
+        </div>
+        
         <div class="install-content">
-            <h3>方式一：SkillHub 一键安装（推荐）</h3>
-            <div class="install-code">
-                <code>skillhub install dindoor-gouwo</code>
+            <div class="install-method">
+                <h3>
+                    <i data-lucide="star" class="w-5 h-5"></i>
+                    方式一：SkillHub 一键安装（推荐）
+                </h3>
+                <div class="install-code">
+                    <code>skillhub install dindoor-gouwo</code>
+                </div>
             </div>
             
-            <h3>方式二：Git 手动安装</h3>
-            <div class="install-code">
-                <code># GitHub</code><br>
-                <code>git clone https://github.com/hotlt/goowoo.git dindoor-gouwo</code><br><br>
-                <code># Gitee（国内加速）</code><br>
-                <code>git clone https://gitee.com/dindoor/goowoo.git dindoor-gouwo</code>
+            <div class="install-method">
+                <h3>
+                    <i data-lucide="github" class="w-5 h-5"></i>
+                    方式二：Git 手动安装
+                </h3>
+                <div class="install-code">
+                    <code class="comment"># GitHub</code>
+                    <code>git clone https://github.com/hotlt/goowoo.git dindoor-gouwo</code>
+                    <br><br>
+                    <code class="comment"># Gitee（国内加速）</code>
+                    <code>git clone https://gitee.com/dindoor/goowoo.git dindoor-gouwo</code>
+                </div>
             </div>
             
-            <h3>方式三：命令行安装</h3>
-            <div class="install-code">
-                <code>claw skill install dindoor-gouwo</code>
+            <div class="install-method">
+                <h3>
+                    <i data-lucide="command" class="w-5 h-5"></i>
+                    方式三：命令行安装
+                </h3>
+                <div class="install-code">
+                    <code>claw skill install dindoor-gouwo</code>
+                </div>
             </div>
-            <p class="install-note">安装后重启 OpenClaw，技能即可生效。</p>
+            
+            <p class="install-note">
+                <i data-lucide="info" class="w-4 h-4 inline"></i>
+                安装后重启 OpenClaw，技能即可生效。
+            </p>
         </div>
     </section>
 
     <!-- Scenarios Section -->
-    <section class="scenarios" id="scenarios">
-        <h2>💡 适用场景</h2>
+    <section class="scenarios" id="scenarios" aria-labelledby="scenarios-title">
+        <div class="section-header">
+            <h2 id="scenarios-title" class="section-title">
+                <i data-lucide="lightbulb" class="w-8 h-8"></i>
+                适用场景
+            </h2>
+            <p class="section-subtitle">灵活应对各种知识管理需求</p>
+        </div>
+        
         <div class="scenarios-grid">
-            <div class="scenario">
+            <article class="scenario">
                 <div class="scenario-icon">📦</div>
                 <h4>产品资料</h4>
                 <p>产品参数、价格、卖点</p>
-            </div>
-            <div class="scenario">
+            </article>
+            
+            <article class="scenario">
                 <div class="scenario-icon">📞</div>
                 <h4>联系方式</h4>
                 <p>客户电话、合作方信息</p>
-            </div>
-            <div class="scenario">
+            </article>
+            
+            <article class="scenario">
                 <div class="scenario-icon">📝</div>
                 <h4>工作笔记</h4>
                 <p>会议记录、待办事项</p>
-            </div>
-            <div class="scenario">
+            </article>
+            
+            <article class="scenario">
                 <div class="scenario-icon">📚</div>
                 <h4>知识积累</h4>
                 <p>学习心得、经验总结</p>
-            </div>
+            </article>
         </div>
     </section>
 
     <!-- Changelog Section -->
-    <section class="changelog" id="changelog">
-        <h2>📝 更新日志</h2>
+    <section class="changelog" id="changelog" aria-labelledby="changelog-title">
+        <div class="section-header">
+            <h2 id="changelog-title" class="section-title">
+                <i data-lucide="file-text" class="w-8 h-8"></i>
+                更新日志
+            </h2>
+        </div>
+        
         <div class="changelog-list">
-            <div class="changelog-item">
-                <div class="changelog-date">v2.1 · 2026-03-24</div>
+            <article class="changelog-item">
+                <div class="changelog-date">
+                    <i data-lucide="tag" class="w-4 h-4"></i>
+                    v1.1 · 2026-03-31
+                </div>
                 <div class="changelog-content">
-                    <span class="badge security">🔒 安全加固</span>
+                    <span class="badge badge-new">
+                        <i data-lucide="sparkles" class="w-3 h-3"></i>
+                        体验优化
+                    </span>
+                    <ul>
+                        <li>新增可选 jieba 分词支持，关键词提取更准确，能正确识别专业术语</li>
+                        <li>保持向下兼容：未安装 jieba 时自动回退到原正则分词，依然零依赖</li>
+                        <li>提供工具脚本 <code>rebuild_keywords.py</code> 可以一键重新生成所有条目关键词</li>
+                    </ul>
+                </div>
+            </article>
+            
+            <article class="changelog-item">
+                <div class="changelog-date">
+                    <i data-lucide="tag" class="w-4 h-4"></i>
+                    v1.0 · 2026-03-24
+                </div>
+                <div class="changelog-content">
+                    <span class="badge badge-security">
+                        <i data-lucide="shield" class="w-3 h-3"></i>
+                        安全加固
+                    </span>
                     <ul>
                         <li>单条内容最大限制 1MB，防止恶意填充</li>
                         <li>关键词长度限制 10KB</li>
                         <li>stats 显示数据库大小，超过 100MB 警告</li>
                     </ul>
                 </div>
-            </div>
-            <div class="changelog-item">
-                <div class="changelog-date">v2.0 · 2026-03-23</div>
+            </article>
+            
+            <article class="changelog-item">
+                <div class="changelog-date">
+                    <i data-lucide="tag" class="w-4 h-4"></i>
+                    v0.9 · 2026-03-23
+                </div>
                 <div class="changelog-content">
-                    <span class="badge new">✨ 新功能</span>
+                    <span class="badge badge-new">
+                        <i data-lucide="sparkles" class="w-3 h-3"></i>
+                        新功能
+                    </span>
                     <ul>
                         <li>热点优先检索：检索次数越多排序越靠前</li>
                         <li>重复内容合并：相似度检测自动提示</li>
                         <li>定时备份：覆盖式备份防数据丢失</li>
                     </ul>
                 </div>
-            </div>
-            <div class="changelog-item">
-                <div class="changelog-date">v1.0 · 2026-03-22</div>
+            </article>
+            
+            <article class="changelog-item">
+                <div class="changelog-date">
+                    <i data-lucide="tag" class="w-4 h-4"></i>
+                    v0.1 · 2026-03-22
+                </div>
                 <div class="changelog-content">
-                    <span class="badge">🚀 首发</span>
+                    <span class="badge badge-default">
+                        <i data-lucide="rocket" class="w-3 h-3"></i>
+                        首发
+                    </span>
                     <ul>
                         <li>SQLite + FTS5 全文检索</li>
                         <li>关键词自动提取</li>
                         <li>分类标签管理</li>
                     </ul>
                 </div>
-            </div>
+            </article>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer>
-        <div class="footer-logo"><img src="https://s.zl6.cn/images/goowoo.png?v=202603241000" alt="Goowoo" height="64"></div>
+    <footer role="contentinfo">
+        <div class="footer-logo">
+            <img src="https://s.zl6.cn/images/goowoo.png?v=202603241000" alt="Goowoo">
+        </div>
         <div class="footer-tagline">愿每一个认真工作的人，都有一个属于自己的"狗窝"。</div>
         <p class="footer-desc">有序的热闹，是效率的证明。</p>
+        
+        <div class="footer-links">
+            <a href="https://github.com/hotlt/dindoor-gouwo" target="_blank" rel="noopener noreferrer">
+                <i data-lucide="github" class="w-4 h-4"></i>
+                GitHub
+            </a>
+            <a href="https://gitee.com/dindoor/dindoor-gouwo" target="_blank" rel="noopener noreferrer">
+                <i data-lucide="code-2" class="w-4 h-4"></i>
+                Gitee
+            </a>
+        </div>
+        
         <p class="footer-license">
-            <a href="https://github.com/hotlt/dindoor-gouwo">GitHub</a> ·
-            <a href="https://gitee.com/dindoor/dindoor-gouwo">Gitee</a> ·
             MIT License · 作者：天涯 AI @ OpenClaw
         </p>
     </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        let lastScroll = 0;
+
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            
+            if (currentScroll > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+            
+            lastScroll = currentScroll;
+        }, { passive: true });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    const offset = 100;
+                    const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+                    window.scrollTo({ top, behavior: 'smooth' });
+                }
+                // Close mobile menu if open
+                closeMobileMenu();
+            });
+        });
+
+        // Mobile Menu Toggle
+        const navToggle = document.getElementById('navToggle');
+        const navLinks = document.getElementById('navLinks');
+        const navCta = document.getElementById('navCta');
+        const navOverlay = document.getElementById('navOverlay');
+
+        function toggleMobileMenu() {
+            if (navLinks.classList.contains('mobile-open')) {
+                closeMobileMenu();
+            } else {
+                navLinks.classList.add('mobile-open');
+                navCta.classList.add('mobile-open');
+                navOverlay.classList.add('active');
+                navToggle.setAttribute('aria-expanded', 'true');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeMobileMenu() {
+            navLinks.classList.remove('mobile-open');
+            navCta.classList.remove('mobile-open');
+            navOverlay.classList.remove('active');
+            navToggle.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
+        }
+
+        if (navToggle) {
+            navToggle.addEventListener('click', toggleMobileMenu);
+        }
+
+        if (navOverlay) {
+            navOverlay.addEventListener('click', closeMobileMenu);
+        }
+
+        // Close menu on resize to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                closeMobileMenu();
+            }
+        });
+    </script>
 </body>
 </html>
